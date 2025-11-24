@@ -1,31 +1,88 @@
+import sys
+import os
+import ctypes
 import platform
 import launcher
 import customtkinter as ctk
 import threading
-import os
 from tkinter import filedialog
 import json
-import sys
+import socket
+from tkinter import messagebox
+import pwd
+import pystray
+from PIL import Image, ImageDraw
+
+LOCK_PORT = 65432
+
+def get_lock_socket():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.bind(('127.0.0.1', LOCK_PORT))
+        return s
+    except socket.error:
+        return None
+
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return os.getuid() == 0
+
+
+def rerun_as_admin():
+    if sys.platform == 'win32':
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, " ".join(sys.argv), None, 1
+        )
+    else:
+        args = [sys.executable] + sys.argv
+
+        display = os.environ.get('DISPLAY', ':0')
+        xauth = os.environ.get('XAUTHORITY', '')
+
+        cmd = [
+              'pkexec',
+              'env',
+              f'DISPLAY={display}',
+              f'XAUTHORITY={xauth}'
+          ] + args
+
+        os.execvp('pkexec', cmd)
 
 CONFIG_FILE = "config.json"
 
 MODES_DB = {}
 
-
 def get_config_file_path():
+    home_dir = os.path.expanduser("~")
 
-    if platform.system() == "Linux" and os.environ.get('SUDO_USER'):
-        real_user = os.environ.get('SUDO_USER')
-        home_dir = f"/home/{real_user}"
-    else:
-        home_dir = os.path.expanduser("~")
+    if platform.system() == "Linux":
+        sudo_user = os.environ.get('SUDO_USER')
+
+        pkexec_uid = os.environ.get('PKEXEC_UID')
+
+        real_user = None
+        if sudo_user:
+            real_user = sudo_user
+        elif pkexec_uid:
+            try:
+                real_user = pwd.getpwuid(int(pkexec_uid)).pw_name
+            except:
+                pass
+
+        if real_user:
+            home_dir = f"/home/{real_user}"
 
     save_folder = os.path.join(home_dir, "Documents", "OPENitModes")
 
     if not os.path.exists(save_folder):
         try:
             os.makedirs(save_folder)
-            print(f"Created config folder at: {save_folder}")
+            if platform.system() == "Linux" and (sudo_user or pkexec_uid):
+                u_info = pwd.getpwnam(real_user)
+                os.chown(save_folder, u_info.pw_uid, u_info.pw_gid)
+                print(f"Created config folder at: {save_folder}")
         except OSError as e:
             print(f"Error creating config folder: {e}")
             # Fallback to current directory if Documents is locked
@@ -162,15 +219,50 @@ class OPENitApp(ctk.CTk):
 
         self.refresh_sidebar()
 
-    def on_closing(self):
-        print("Shutting down...")
+    def create_tray_image(self):
+        width = 64
+        height = 64
+        image = Image.new('RGB', (width, height), color=(30, 30, 30))
+        d = ImageDraw.Draw(image)
+        d.ellipse((10, 10, 54, 54), fill="#1F6AA5")
+        return image
 
-        if self.service_running:
-            self.stop_event.set()
+    def run_tray_icon(self):
+        menu = (
+            pystray.MenuItem("Open", self.show_window),
+            pystray.MenuItem("Quit", self.quit_app)
+        )
+
+        self.tray_icon = pystray.Icon("name", self.create_tray_image(), "OpenIt", menu)
+
+        self.tray_icon.run()
+
+    def show_window(self, icon=None, item=None):
+        self.tray_icon.stop()
+
+        self.after(0, self.deiconify)
+
+    def quit_app(self, icon=None, item=None):
+        if hasattr(self, 'tray_icon'):
+            self.tray_icon.stop()
+
+        self.stop_event.set()
 
         self.destroy()
-
+        import sys
         sys.exit(0)
+
+    def on_closing(self):
+        if not self.service_running:
+            self.quit_app()
+        else:
+            if platform.system() == "Windows":
+                self.withdraw()
+                t = threading.Thread(target=self.run_tray_icon)
+                t.daemon = True
+                t.start()
+            else:
+                self.iconify()
 
     def load_config(self):
         file_path = get_config_file_path()
@@ -358,5 +450,17 @@ class OPENitApp(ctk.CTk):
 
 
 if __name__ == "__main__":
+    if not is_admin():
+        rerun_as_admin()
+        sys.exit(0)
+
+    lock_socket = get_lock_socket()
+    if not lock_socket:
+        import tkinter
+        root = tkinter.Tk()
+        root.withdraw()
+        messagebox.showerror("Error", "OpenIt is already running!")
+        sys.exit(0)
+
     app = OPENitApp()
     app.mainloop()

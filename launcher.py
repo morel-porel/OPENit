@@ -4,13 +4,18 @@ import os
 import threading
 import time
 import keyboard
-
+import pwd
 
 def get_real_user():
-    if platform.system() == "Linux":
-        return os.environ.get('SUDO_USER')
-    return None
+    if platform.system() != "Linux": return None
 
+    if os.environ.get('SUDO_USER'):
+        return os.environ.get('SUDO_USER')
+
+    if os.environ.get('PKEXEC_UID'):
+        return pwd.getpwuid(int(os.environ.get('PKEXEC_UID'))).pw_name
+
+    return None
 
 def open_apps(mode_name, modes_db):
     print(f"\n[BACKEND] Triggered {mode_name}...")

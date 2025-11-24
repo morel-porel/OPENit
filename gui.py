@@ -187,12 +187,10 @@ class OPENitApp(ctk.CTk):
         ctk.set_default_color_theme("green")
 
         try:
-            icon_path = resource_path("icon2.png")
-            from PIL import ImageTk
-            self.icon_image = ImageTk.PhotoImage(file=icon_path)
-            self.wm_iconphoto(False, self.icon_image)
+            icon_path = resource_path("icon2.ico")
+            self.iconbitmap(icon_path)
         except Exception as e:
-            print(f"Window Icon error: {e}")
+            messagebox.showerror("Icon Error", f"{e}")
 
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -238,7 +236,12 @@ class OPENitApp(ctk.CTk):
             path = resource_path("icon1.png")
             return Image.open(path)
         except:
-            pass
+            width = 64
+            height = 64
+            image = Image.new('RGB', (width, height), color=(30, 30, 30))
+            d = ImageDraw.Draw(image)
+            d.ellipse((10, 10, 54, 54), fill="#1F6AA5")
+            return image
 
     def run_tray_icon(self):
         menu = (

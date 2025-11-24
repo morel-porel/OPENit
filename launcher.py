@@ -3,63 +3,31 @@ import platform
 import os
 import threading
 import time
-
 import keyboard
 
-# --- THE CONFIGURATION (The Brains) ---
-# In the future, we will load this from a JSON file.
-# For now, we hardcode it to test logic.
-APP_MODES = {
-    "study": [
-        # Linux examples (for you)
-        "gnome-calculator"
-        # Windows examples (for her - comment these out when testing on Linux)
-        # r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        # r"C:\Users\HerName\AppData\Local\Microsoft\Teams\current\Teams.exe"
-    ],
-    "game": [
-        # "info",
-        "/usr/bin/notesclonedym"
-        # Windows examples
-        # r"C:\Program Files (x86)\Steam\steam.exe"
-    ]
-}
-
-last_trigger_time = 0
-COOLDOWN = 1.0
-
-is_listening = False
-
-
-def activate_listening():
-    global is_listening
-    # Play sound here todo
-    is_listening = True
-
-    # Go back to sleep if no input after 3 secs
-    threading.Timer(3.0, cancel_listening).start()
-
-def cancel_listening():
-    global is_listening
-    if is_listening:
-        is_listening = False
 
 def get_real_user():
-
     if platform.system() == "Linux":
         return os.environ.get('SUDO_USER')
     return None
 
-def launch_mode(mode_name):
 
-    apps_to_open = APP_MODES.get(mode_name, [])
+def open_apps(mode_name, modes_db):
+    print(f"\n[BACKEND] Triggered {mode_name}...")
+
+    mode_data = modes_db.get(mode_name)
+    if not mode_data:
+        print(f" -> Error: Mode {mode_name} not found in DB.")
+        return
+
+    apps = mode_data.get("apps", [])
     real_user = get_real_user()
 
-    for app in apps_to_open:
+    for app in apps:
         try:
             if platform.system() == "Windows":
                 subprocess.Popen(app, close_fds=True)
-            else:
+            elif platform.system() == "Linux":
                 if real_user:
                     cmd = ['sudo', '-u', real_user, app]
                 else:
@@ -71,46 +39,37 @@ def launch_mode(mode_name):
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL
                 )
-
-            print(f"Launched: {app}")
-        except FileNotFoundError:
-            print(f"ERROR: Could not find path: {app}")
+            print(f" -> Launched: {app}")
         except Exception as e:
-            print(f"ERROR launching {app}: {e}")
+            print(f" -> ERROR launching {app}: {e}")
 
 
-def safe_trigger(mode_name):
-    global last_trigger_time
-    current_time = time.time()
+def run_listener(modes_db, stop_event):
+    print("--- LISTENER THREAD STARTED ---")
 
-    if current_time - last_trigger_time > COOLDOWN:
-        last_trigger_time = current_time
-        t = threading.Thread(target=launch_mode, args=(mode_name,))
-        t.daemon = True
-        t.start()
+    while not stop_event.is_set():
 
+        if keyboard.is_pressed('ctrl+space'):
+            print("[BACKEND] Wake Key Detected! Waiting for command...")
 
-def handle_command(key_event):
-    global is_listening
-    if not is_listening:
-        return
+            event = keyboard.read_event()
+            if event.event_type == keyboard.KEY_DOWN:
+                pressed_key = event.name.lower()
 
-    key = key_event.name
+                found = False
+                for name, data in modes_db.items():
+                    if data['key'] == pressed_key:
+                        t = threading.Thread(target=open_apps, args=(name, modes_db))
+                        t.daemon = True
+                        t.start()
+                        found = True
+                        break
 
-    if key == 's':
-        print(" -> Command Received: STUDY")
-        safe_trigger('study')
-        is_listening = False
+                if not found:
+                    print(f" -> No mode assigned to key: {pressed_key}")
 
-    elif key == 'g':
-        print(" -> Command Received: GAME")
-        safe_trigger('game')
-        is_listening = False
+            time.sleep(0.5)  # Anti-bounce sleep
 
+        time.sleep(0.05)  # CPU Rest
 
-if __name__ == "__main__":
-    keyboard.add_hotkey('ctrl+space', activate_listening)
-
-    keyboard.on_press(handle_command)
-
-    keyboard.wait('Esc')
+    print("--- LISTENER THREAD STOPPED ---")

@@ -9,7 +9,6 @@ from tkinter import filedialog
 import json
 import socket
 from tkinter import messagebox
-import pwd
 import pystray
 from PIL import Image, ImageDraw
 
@@ -58,8 +57,8 @@ def get_config_file_path():
     home_dir = os.path.expanduser("~")
 
     if platform.system() == "Linux":
+        import pwd
         sudo_user = os.environ.get('SUDO_USER')
-
         pkexec_uid = os.environ.get('PKEXEC_UID')
 
         real_user = None

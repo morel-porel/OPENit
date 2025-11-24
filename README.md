@@ -1,52 +1,77 @@
 ![Header](./OPENit-Banner.png)
 
-# 🍀 OPENit - A simple multi-app launcher 🍀
+# ⬜ OPENit - Launch everything with a quick key sequence! ⬜
 
-### A lightweight and stylish app that sets up application and folder workspaces in an instant.
+OPENit is a desktop automation tool built for students, developers, and gamers who hate the repetitive process of opening the same 5 applications every time they sit down. 
 
-## 💾 Installation
-- Click on the latest release found on the right side of this repository.
-- Download the **OPENit.exe** and run the setup, it is simple and shouldn't take long.
+Instead of clicking icons one by one, define a **Mode** (e.g., "Study", "Game", "Work") and launch everything with a quick key sequence.
 
-## 🚮 Uninstall
-- You should find the **OPENit** folder inside your documents folder, inside you will find unins000.exe, run it.
+### 🍀 Authors 🍃
+- [@DymNomZ](https://github.com/DymNomZ) - Backend Logic & Linux Support
+- [@morel-porel](https://github.com/morel-porel) - **Tool Idea**, UI/UX Design & Windows Testing
 
-## 💾 Installation & Uninstallation 🚮
-Instructions are provided for both Windows and Linux (Debian-based distributions).
+## ✨ Features
 
-## 🖥️ Windows
-Installation
---
-- Click on the latest release found on the right side of this repository.
-- Download the **OPENit.exe** and run the setup. It is simple and shouldn't take long.
+- **📂 Universal Launcher:** Opens Executables (`.exe`), Directories/Folders, PDFs, Text files, and more.
+- **🛡️ Smart "Wake Key" System:** 
+  - Prevents accidental triggers while typing.
+  - Press **`Ctrl + Space`** to wake the bot -> Press your **Trigger Key** (e.g., `s`) -> Watch your apps load.
+- **🎨 Modern UI:** A clean, dark-themed interface built with [`CustomTkinter`](https://github.com/TomSchimansky/CustomTkinter).
+- **👻 Background Listening:**
+  - **Windows:** Minimizes to the System Tray.
+  - **Linux:** Minimizes to Taskbar.
+- **💾 Auto-Save:** Configurations are saved in JSON format to your `Documents/OPENitModes` folder.
+- **🐧🪟 Cross-Platform:** Developed and tested on **Windows 11** and **Linux Mint**.
 
-Uninstallation
---
-- Open the "Apps -> Installed Apps" panel in Windows Settings or other similar options.
-- Find "OPENit version..." in the list, click the three dots, and select "Uninstall".
-- Alternatively, you can find the unins000.exe uninstaller in the application's installation directory and run it.
+## 📥 Installation
 
-## ✨Features!
+Go to the [Releases Page](https://github.com/morel-porel/OPENit/releases).
 
-### 🎛️ Workspace Modes
-- Create and add your own modes to automatically open multiple applications and folders at once
-- Customize what applications and folders are opened in modes.
+### Windows
+1. Download `OpenIt.exe`.
+2. Right-click the file -> **Properties** -> **Compatibility** -> Check **"Run as Administrator"** (Required for global hotkey listening).
+3. Double-click to run.
 
-### ↗️ Shortcuts
-- Set up quick shortcuts for specific modes.
-- Upon adding a new mode, choose a trigger key to open said mode.
+### Linux
+1. Download the Linux binary (the one with no '.exe').
+2. Make it executable: `chmod +x OpenIt`
+3. Run via terminal or create a `.desktop` shortcut.
 
-### 🗑️ Delete Modes
-- Not using a certain mode anymore? Simply delete the mode to make room for new ones.
+## 🎮 Usage Guide
 
-### 🚀 Tech Stack and Developers
-The app is written in **____** with **Pycharm** as the editor.<br>
-**____** is used as the local database and the app is compiled using **____**.
-<br><br>
-<img src="https://skillicons.dev/icons?i=dart,flutter,vscode" />
+1. **Create a Mode:** Click `+ Add Mode`. Give it a name (e.g., "Gaming") and a single letter key (e.g., `g`).
+2. **Add Resources:** Click your new mode, then click `+ Add Application`. You can select files or entire Folders.
+3. **Start Listening:** Click the red **START LISTENER** button.
+4. **Trigger it:**
+   - Press **`Ctrl + Space`** (The Wake Key).
+   - Immediately press **`g`** (Your Mode Key).
+   - **OPENit** will launch all the assigned applications.
 
-### 💪 Developer
-Built by yours truly 😌🍀
+## 🛠️ Built With
+<img src="https://skillicons.dev/icons?i=py" />
 
-### 🎨 Graphics
-Icon and banner by morel-porel
+*   **Language:** Python 3.12
+*   **GUI:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
+*   **Logic:** `keyboard` (Global Hooks), `subprocess`, `threading`
+*   **System Tray:** `pystray`, `Pillow`
+*   **Packaging:** PyInstaller
+
+## 🧑‍💻 Development Setup
+
+If you want to run the source code directly:
+
+```bash
+# Clone the repo
+git clone https://github.com/YourUsername/OPENit.git
+cd OPENit
+
+# Install dependencies
+pip install -r requirements.txt
+# (Make sure to install customtkinter, keyboard, pystray, pillow)
+
+# Run the App
+# Windows (CMD/PowerShell)
+python gui.py
+
+# Linux (Requires Root for keyboard hook)
+sudo python gui.py

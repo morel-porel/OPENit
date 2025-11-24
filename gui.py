@@ -87,6 +87,33 @@ class AddModeDialog(ctk.CTkToplevel):
         self.callback(name, key)
         self.destroy()
 
+
+class ResourceTypeDialog(ctk.CTkToplevel):
+    def __init__(self, parent, callback):
+        super().__init__(parent)
+        self.callback = callback
+        self.title("Select Type")
+        self.geometry("300x150")
+        self.attributes("-topmost", True)
+
+        self.label = ctk.CTkLabel(self, text="What do you want to add?", font=("Arial", 14))
+        self.label.pack(pady=20)
+
+        self.btn_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.btn_frame.pack(fill="x", padx=20)
+
+        self.btn_file = ctk.CTkButton(self.btn_frame, text="File / App", width=120, command=lambda: self.select("file"))
+        self.btn_file.pack(side="left", padx=10)
+
+        self.btn_folder = ctk.CTkButton(self.btn_frame, text="Folder", width=120, fg_color="orange",
+                                        hover_color="#D97706", command=lambda: self.select("folder"))
+        self.btn_folder.pack(side="right", padx=10)
+
+    def select(self, choice):
+        self.withdraw()
+        self.callback(choice)
+        self.destroy()
+
 class OPENitApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -263,7 +290,12 @@ class OPENitApp(ctk.CTk):
 
             app_name = os.path.basename(app_path)
 
-            label_name = ctk.CTkLabel(row, text=app_name, anchor="w")
+            if os.path.isdir(app_path):
+                display_text = f"📂 {app_name}"
+            else:
+                display_text = f"📄 {app_name}"
+
+            label_name = ctk.CTkLabel(row, text=display_text, anchor="w")
             label_name.pack(side="left", padx=10)
 
             btn_delete = ctk.CTkButton(
@@ -279,13 +311,23 @@ class OPENitApp(ctk.CTk):
     def add_app_dialog(self):
         if not self.selected_mode: return
 
-        file_path = filedialog.askopenfilename(
-            title="Select Application",
-            filetypes=[("Executables", "*.exe"), ("All Files", "*.*")]
-        )
+        ResourceTypeDialog(self, self.handle_resource_selection)
 
-        if file_path:
-            MODES_DB[self.selected_mode]["apps"].append(file_path)
+    def handle_resource_selection(self, choice):
+        path = ""
+
+        if choice == "file":
+            path = filedialog.askopenfilename(
+                title="Select File",
+                filetypes=[("All Files", "*.*")]
+            )
+        elif choice == "folder":
+            path = filedialog.askdirectory(title="Select Folder")
+
+        if path:
+            path = os.path.normpath(path)
+
+            MODES_DB[self.selected_mode]["apps"].append(path)
             self.refresh_app_list_ui()
             self.save_config()
 

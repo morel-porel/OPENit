@@ -20,18 +20,18 @@ def open_apps(mode_name, modes_db):
         print(f" -> Error: Mode {mode_name} not found in DB.")
         return
 
-    apps = mode_data.get("apps", [])
+    resources = mode_data.get("apps", [])
     real_user = get_real_user()
 
-    for app in apps:
+    for path in resources:
         try:
             if platform.system() == "Windows":
-                subprocess.Popen(app, close_fds=True)
+                os.startfile(path)
             elif platform.system() == "Linux":
                 if real_user:
-                    cmd = ['sudo', '-u', real_user, app]
+                    cmd = ['sudo', '-u', real_user, 'xdg-open', path]
                 else:
-                    cmd = [app]
+                    cmd = ['xdg-open', path]
 
                 subprocess.Popen(
                     cmd,
@@ -39,9 +39,9 @@ def open_apps(mode_name, modes_db):
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL
                 )
-            print(f" -> Launched: {app}")
+            print(f" -> Opened: {path}")
         except Exception as e:
-            print(f" -> ERROR launching {app}: {e}")
+            print(f" -> ERROR opening {path}: {e}")
 
 
 def run_listener(modes_db, stop_event):

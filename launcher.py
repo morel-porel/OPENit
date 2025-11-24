@@ -4,7 +4,6 @@ import os
 import threading
 import time
 import keyboard
-import pwd
 
 def get_real_user():
     if platform.system() != "Linux": return None
@@ -13,6 +12,7 @@ def get_real_user():
         return os.environ.get('SUDO_USER')
 
     if os.environ.get('PKEXEC_UID'):
+        import pwd
         return pwd.getpwuid(int(os.environ.get('PKEXEC_UID'))).pw_name
 
     return None

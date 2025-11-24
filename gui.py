@@ -28,6 +28,13 @@ def is_admin():
     except:
         return os.getuid() == 0
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 def rerun_as_admin():
     if sys.platform == 'win32':
@@ -179,6 +186,14 @@ class OPENitApp(ctk.CTk):
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("green")
 
+        try:
+            icon_path = resource_path("icon2.png")
+            from PIL import ImageTk
+            self.icon_image = ImageTk.PhotoImage(file=icon_path)
+            self.wm_iconphoto(False, self.icon_image)
+        except Exception as e:
+            print(f"Window Icon error: {e}")
+
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         self.load_config()
@@ -219,12 +234,11 @@ class OPENitApp(ctk.CTk):
         self.refresh_sidebar()
 
     def create_tray_image(self):
-        width = 64
-        height = 64
-        image = Image.new('RGB', (width, height), color=(30, 30, 30))
-        d = ImageDraw.Draw(image)
-        d.ellipse((10, 10, 54, 54), fill="#1F6AA5")
-        return image
+        try:
+            path = resource_path("icon1.png")
+            return Image.open(path)
+        except:
+            pass
 
     def run_tray_icon(self):
         menu = (
